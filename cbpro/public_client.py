@@ -18,14 +18,14 @@ class PublicClient(object):
 
     """
 
-    def __init__(self, api_url='https://api.pro.coinbase.com', timeout=30):
+    def __init__(self, api_url="https://api.pro.coinbase.com", timeout=30):
         """Create cbpro API public client.
 
         Args:
             api_url (Optional[str]): API URL. Defaults to cbpro API.
 
         """
-        self.url = api_url.rstrip('/')
+        self.url = api_url.rstrip("/")
         self.auth = None
         self.session = requests.Session()
 
@@ -47,7 +47,7 @@ class PublicClient(object):
                 ]
 
         """
-        return self._send_message('get', '/products')
+        return self._send_message("get", "/products")
 
     def get_product_order_book(self, product_id, level=1):
         """Get a list of open orders for a product.
@@ -84,10 +84,10 @@ class PublicClient(object):
                 }
 
         """
-        params = {'level': level}
-        return self._send_message('get',
-                                  '/products/{}/book'.format(product_id),
-                                  params=params)
+        params = {"level": level}
+        return self._send_message(
+            "get", "/products/{}/book".format(product_id), params=params
+        )
 
     def get_product_ticker(self, product_id):
         """Snapshot about the last trade (tick), best bid/ask and 24h volume.
@@ -111,10 +111,11 @@ class PublicClient(object):
                 }
 
         """
-        return self._send_message('get',
-                                  '/products/{}/ticker'.format(product_id))
+        return self._send_message("get", "/products/{}/ticker".format(product_id))
 
-    def get_product_trades(self, product_id, before='', after='', limit=None, result=None):
+    def get_product_trades(
+        self, product_id, before="", after="", limit=None, result=None
+    ):
         """List the latest trades for a product.
 
         This method returns a generator which may make multiple HTTP requests
@@ -143,11 +144,11 @@ class PublicClient(object):
                      "side": "sell"
          }]
         """
-        return self._send_paginated_message('/products/{}/trades'
-                                            .format(product_id))
+        return self._send_paginated_message("/products/{}/trades".format(product_id))
 
-    def get_product_historic_rates(self, product_id, start=None, end=None,
-                                   granularity=None):
+    def get_product_historic_rates(
+        self, product_id, start=None, end=None, granularity=None
+    ):
         """Historic rates for a product.
 
         Rates are returned in grouped buckets based on requested
@@ -185,19 +186,22 @@ class PublicClient(object):
         """
         params = {}
         if start is not None:
-            params['start'] = start
+            params["start"] = start
         if end is not None:
-            params['end'] = end
+            params["end"] = end
         if granularity is not None:
             acceptedGrans = [60, 300, 900, 3600, 21600, 86400]
             if granularity not in acceptedGrans:
-                raise ValueError( 'Specified granularity is {}, must be in approved values: {}'.format(
-                        granularity, acceptedGrans) )
+                raise ValueError(
+                    "Specified granularity is {}, must be in approved values: {}".format(
+                        granularity, acceptedGrans
+                    )
+                )
 
-            params['granularity'] = granularity
-        return self._send_message('get',
-                                  '/products/{}/candles'.format(product_id),
-                                  params=params)
+            params["granularity"] = granularity
+        return self._send_message(
+            "get", "/products/{}/candles".format(product_id), params=params
+        )
 
     def get_product_24hr_stats(self, product_id):
         """Get 24 hr stats for the product.
@@ -216,8 +220,7 @@ class PublicClient(object):
                     }
 
         """
-        return self._send_message('get',
-                                  '/products/{}/stats'.format(product_id))
+        return self._send_message("get", "/products/{}/stats".format(product_id))
 
     def get_currencies(self):
         """List known currencies.
@@ -235,7 +238,39 @@ class PublicClient(object):
                 }]
 
         """
-        return self._send_message('get', '/currencies')
+        return self._send_message("get", "/currencies")
+
+    def get_currency(self, id):
+        """List specific currency.
+
+        Returns:
+            dictionary: Info for a currency. Example::
+                {
+                    "id": "BTC",
+                    "name": "Bitcoin",
+                    "min_size": "0.00000001",
+                    "status": "online",
+                    "max_precision": "0.01",
+                    "message": "",
+                    "details": {
+                        "type": "crypto",
+                        "symbol": "₿",
+                        "network_confirmations": 3,
+                        "sort_order": 3,
+                        "crypto_address_link": "https://live.blockcypher.com/btc/address/{{address}}",
+                        "crypto_transaction_link": "https://live.blockcypher.com/btc/tx/{{txId}}",
+                        "push_payment_methods": [
+                            "crypto"
+                        ],
+                        "group_types": [
+                            "btc",
+                            "crypto"
+                        ],
+                    }
+                }
+
+        """
+        return self._send_message("get", "/currencies/{}".format(id))
 
     def get_time(self):
         """Get the API server time.
@@ -249,7 +284,7 @@ class PublicClient(object):
                     }
 
         """
-        return self._send_message('get', '/time')
+        return self._send_message("get", "/time")
 
     def _send_message(self, method, endpoint, params=None, data=None):
         """Send API request.
@@ -265,12 +300,13 @@ class PublicClient(object):
 
         """
         url = self.url + endpoint
-        r = self.session.request(method, url, params=params, data=data,
-                                 auth=self.auth, timeout=30)
+        r = self.session.request(
+            method, url, params=params, data=data, auth=self.auth, timeout=30
+        )
         return r.json()
 
     def _send_paginated_message(self, endpoint, params=None):
-        """ Send API message that results in a paginated response.
+        """Send API message that results in a paginated response.
 
         The paginated responses are abstracted away by making API requests on
         demand as the response is iterated over.
@@ -304,8 +340,7 @@ class PublicClient(object):
             # param to get next page.
             # If this request included `before` don't get any more pages - the
             # cbpro API doesn't support multiple pages in that case.
-            if not r.headers.get('cb-after') or \
-                    params.get('before') is not None:
+            if not r.headers.get("cb-after") or params.get("before") is not None:
                 break
             else:
-                params['after'] = r.headers['cb-after']
+                params["after"] = r.headers["cb-after"]
